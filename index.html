@@ -1,1 +1,193 @@
+import React, { useState } from "react";
 
+// DemoReservation.jsx
+// シンプルな予約サイトのデモコンポーネント（予約一覧＋申込み導線）
+// TailwindCSS 想定。スマホファーストでシンプルかつ実用的なUI。
+
+export default function DemoReservation() {
+  const sampleProducts = [
+    {
+      id: "p1",
+      title: "アイランドホッピング（終日）",
+      subtitle: "小グループで行く人気コース。写真撮影付き",
+      price: 8000,
+      duration: "8時間",
+      highlights: ["スノーケリング", "BBQランチ", "写真サービス"],
+      spotsLeft: 12,
+    },
+    {
+      id: "p2",
+      title: "体験ダイビング（午前）",
+      subtitle: "日本語ガイド対応・初心者歓迎",
+      price: 12000,
+      duration: "4時間",
+      highlights: ["器材レンタル込み", "日本語ガイド"],
+      spotsLeft: 6,
+    },
+    {
+      id: "p3",
+      title: "ジンベエザメウォッチング",
+      subtitle: "早朝出発・ベストシーズン限定",
+      price: 10000,
+      duration: "5時間",
+      highlights: ["早朝送迎込み", "少人数制"],
+      spotsLeft: 4,
+    },
+  ];
+
+  const [products] = useState(sampleProducts);
+  const [query, setQuery] = useState("");
+  const [selectedProduct, setSelectedProduct] = useState(null);
+  const [showModal, setShowModal] = useState(false);
+  const [booking, setBooking] = useState({ name: "", phone: "", email: "", date: "", pax: 1 });
+  const [successMsg, setSuccessMsg] = useState(null);
+
+  function openBooking(p) {
+    setSelectedProduct(p);
+    setBooking({ name: "", phone: "", email: "", date: "", pax: 1 });
+    setSuccessMsg(null);
+    setShowModal(true);
+  }
+
+  function submitBooking(e) {
+    e.preventDefault();
+    // デモでは外部送信は行わず、コンソールと成功メッセージを表示します。
+    const payload = {
+      productId: selectedProduct.id,
+      productTitle: selectedProduct.title,
+      ...booking,
+      createdAt: new Date().toISOString(),
+    };
+    console.log("[DEMO Booking Payload]", payload);
+    setSuccessMsg("ご予約リクエストを受け付けました！LINEまたはメールで担当が確認します。");
+    // 実運用ではここでAPI叩く or メール送信、LINE通知など実装
+  }
+
+  const filtered = products.filter((p) => {
+    const q = query.trim().toLowerCase();
+    if (!q) return true;
+    return (
+      p.title.toLowerCase().includes(q) || p.subtitle.toLowerCase().includes(q) || p.highlights.join(" ").toLowerCase().includes(q)
+    );
+  });
+
+  return (
+    <div className="min-h-screen bg-slate-50 p-4 sm:p-8">
+      <header className="max-w-4xl mx-auto mb-6">
+        <div className="flex items-center justify-between">
+          <h1 className="text-2xl sm:text-3xl font-bold">セブ島ツアー予約ポータル（デモ）</h1>
+          <div className="text-sm text-slate-600">日本語対応 / サンプルデータ</div>
+        </div>
+        <p className="mt-2 text-slate-700">人気ツアーを一覧で比較し、簡単に予約リクエストを送れます。LINE連携・OTAリンクの追加も可能。</p>
+      </header>
+
+      <main className="max-w-4xl mx-auto">
+        <section className="mb-6">
+          <div className="flex gap-2 flex-col sm:flex-row sm:items-center">
+            <input
+              aria-label="検索"
+              placeholder="ツアー名・キーワードで検索（例：ダイビング）"
+              className="flex-1 rounded-md border border-slate-200 p-3 shadow-sm"
+              value={query}
+              onChange={(e) => setQuery(e.target.value)}
+            />
+            <button
+              onClick={() => setQuery("")}
+              className="rounded-md px-4 py-3 bg-white border border-slate-200 shadow-sm text-sm"
+            >
+              リセット
+            </button>
+            <a
+              href="#contact"
+              className="rounded-md px-4 py-3 bg-amber-400 text-white font-medium shadow-sm text-sm"
+            >
+              LINEで問い合わせ
+            </a>
+          </div>
+        </section>
+
+        <section className="grid gap-4">
+          {filtered.map((p) => (
+            <article key={p.id} className="bg-white rounded-2xl p-4 shadow-sm flex flex-col sm:flex-row items-start gap-4">
+              <div className="w-full sm:w-40 h-28 bg-slate-100 rounded-lg flex items-center justify-center text-slate-400">写真</div>
+              <div className="flex-1">
+                <h3 className="text-lg font-semibold">{p.title}</h3>
+                <p className="text-sm text-slate-600 mt-1">{p.subtitle}</p>
+                <div className="mt-3 flex flex-wrap gap-2 text-xs">
+                  {p.highlights.map((h) => (
+                    <span key={h} className="px-2 py-1 bg-amber-50 rounded-md border border-amber-100">{h}</span>
+                  ))}
+                </div>
+                <div className="mt-3 flex items-center justify-between">
+                  <div className="text-sm text-slate-700">所要時間: {p.duration}</div>
+                  <div className="flex items-center gap-4">
+                    <div className="text-xl font-bold">¥{p.price.toLocaleString()}</div>
+                    <button
+                      onClick={() => openBooking(p)}
+                      className="rounded-lg px-3 py-2 bg-emerald-500 text-white font-medium shadow-sm"
+                    >
+                      予約する
+                    </button>
+                  </div>
+                </div>
+                <div className="mt-2 text-xs text-slate-500">残席: {p.spotsLeft} 名</div>
+              </div>
+            </article>
+          ))}
+
+          {filtered.length === 0 && (
+            <div className="p-6 bg-white rounded-lg text-center text-slate-600">該当するツアーがありません。検索ワードを変えてみてください。</div>
+          )}
+        </section>
+
+        <section id="contact" className="mt-8 bg-white p-4 rounded-xl shadow-sm">
+          <h4 className="font-semibold">提携・問い合わせ</h4>
+          <p className="text-sm text-slate-600 mt-2">旅行会社・ツアー会社の方へ：月額での集客代行や成果報酬での提携が可能です。まずはLINEでご連絡ください。</p>
+          <div className="mt-3 flex gap-2">
+            <a className="px-4 py-2 rounded-md bg-blue-600 text-white" href="#">公式LINEに移動（デモ）</a>
+            <a className="px-4 py-2 rounded-md border" href="#">提携条件を見る</a>
+          </div>
+        </section>
+      </main>
+
+      {/* Booking Modal */}
+      {showModal && selectedProduct && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+          <div className="absolute inset-0 bg-black/40" onClick={() => setShowModal(false)}></div>
+          <div className="relative w-full max-w-xl bg-white rounded-2xl shadow-lg p-6 z-10">
+            <h3 className="text-xl font-semibold">{selectedProduct.title} — 予約リクエスト</h3>
+            <p className="text-sm text-slate-600 mt-1">価格: ¥{selectedProduct.price.toLocaleString()} ／ 残席: {selectedProduct.spotsLeft} 名</p>
+
+            <form className="mt-4 space-y-3" onSubmit={submitBooking}>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                <input required placeholder="お名前（ローマ字可）" className="p-3 border rounded-md" value={booking.name} onChange={(e) => setBooking({ ...booking, name: e.target.value })} />
+                <input required placeholder="電話番号（例: 090-xxxx-xxxx）" className="p-3 border rounded-md" value={booking.phone} onChange={(e) => setBooking({ ...booking, phone: e.target.value })} />
+              </div>
+
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                <input required type="email" placeholder="メールアドレス" className="p-3 border rounded-md" value={booking.email} onChange={(e) => setBooking({ ...booking, email: e.target.value })} />
+                <input required type="date" className="p-3 border rounded-md" value={booking.date} onChange={(e) => setBooking({ ...booking, date: e.target.value })} />
+              </div>
+
+              <div className="flex items-center gap-3">
+                <label className="text-sm">人数</label>
+                <input required type="number" min={1} max={20} className="w-20 p-2 border rounded-md" value={booking.pax} onChange={(e) => setBooking({ ...booking, pax: Number(e.target.value) })} />
+              </div>
+
+              <div className="flex items-center gap-3 justify-end">
+                <button type="button" onClick={() => setShowModal(false)} className="px-4 py-2 rounded-md border">閉じる</button>
+                <button type="submit" className="px-4 py-2 rounded-md bg-emerald-500 text-white">送信する</button>
+              </div>
+            </form>
+
+            {successMsg && (
+              <div className="mt-4 p-3 bg-emerald-50 border border-emerald-100 rounded-md text-emerald-800">{successMsg}</div>
+            )}
+          </div>
+        </div>
+      )}
+
+      <footer className="max-w-4xl mx-auto mt-8 text-center text-sm text-slate-500">© セブ島予約ポータル（デモ）</footer>
+    </div>
+  );
+}
